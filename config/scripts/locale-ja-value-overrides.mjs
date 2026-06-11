@@ -211,7 +211,7 @@ export const JA_VALUE_OVERRIDES = {
   'Take back': '操作を取り戻す',
   'Mobile driving': 'モバイルで操作中',
   'Mobile is driving this browser': 'モバイルがこのブラウザを操作しています',
-  'Wants to run': '実行を希望',
+  'Wants to run': '実行をリクエスト中',
   'No states found': 'ステータスが見つかりません',
   'Loading states': 'ステータスを読み込み中',
   vibrancy: '透過効果',
