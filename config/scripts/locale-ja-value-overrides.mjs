@@ -224,6 +224,9 @@ export const JA_VALUE_OVERRIDES = {
   'Showing first 100 jobs': '最初の 100 件のジョブを表示しています',
   'Imported from Ghostty.': 'Ghostty からインポートしました。',
   'Claude Accounts': 'Claude アカウント',
+  // PR/issue state badges: "Closed" is クローズ (not 閉店 = a shop closing); align "Merged" with マージ済み.
+  'State: Closed': '状態: クローズ',
+  'State: Merged': '状態: マージ済み',
   // Terminal/theme cursor settings = the on-screen カーソル, not the Cursor product.
   'Cursor Text': 'カーソル文字',
   'Cursor color': 'カーソル色',
