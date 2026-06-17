@@ -331,6 +331,8 @@ export const NATIVE_PICKER_LABELS = {
 }
 
 const CJK_LATIN_SPACED_TERMS = [
+  'Issues',
+  'Issue',
   'Terminal',
   'Terminals',
   'terminal',
@@ -407,7 +409,30 @@ function includesPreservedLatinTerm(value, term) {
   return new RegExp(`(^|[^A-Za-z_])${escapeRegExp(term)}($|[^A-Za-z_])`).test(value)
 }
 
-function applyBrandMistranslationFixes(enValue, localeValue, locale) {
+// Multi-word "Cursor …" labels always mean the screen cursor, never the Cursor product.
+const SCREEN_CURSOR_ENVALUES = new Set([
+  'Cursor Text',
+  'Cursor color',
+  'Cursor Opacity',
+  'Cursor Shape',
+  'Blinking Cursor',
+  'Terminal Cursor'
+])
+
+// Bare "Cursor" is ambiguous; these keys are the terminal/theme cursor settings (screen cursor).
+const SCREEN_CURSOR_KEYS = new Set([
+  'auto.components.settings.TerminalWindowSection.c9e1fdf42f',
+  'auto.components.onboarding.ThemeStep.ab2a583a97'
+])
+
+function isScreenCursorContext(brand, enValue, key) {
+  if (brand !== 'Cursor') {
+    return false
+  }
+  return SCREEN_CURSOR_ENVALUES.has(enValue) || SCREEN_CURSOR_KEYS.has(key)
+}
+
+function applyBrandMistranslationFixes(enValue, localeValue, locale, key = '') {
   let result = localeValue
   const mistranslations = BRAND_MISTRANSLATIONS[locale] ?? {}
 
@@ -415,6 +440,11 @@ function applyBrandMistranslationFixes(enValue, localeValue, locale) {
     ([left], [right]) => right.length - left.length
   )) {
     if (!enValue.includes(brand)) {
+      continue
+    }
+    // Why: terminal/theme "Cursor" labels name the on-screen カーソル, not the Cursor product —
+    // skip the revert so カーソル survives for these settings.
+    if (isScreenCursorContext(brand, enValue, key)) {
       continue
     }
     if (includesPreservedLatinTerm(result, brand)) {
@@ -483,7 +513,7 @@ export function repairTranslatedValue({ key, enValue, localeValue, locale }) {
   const keyOverride = LOCALE_KEY_OVERRIDES[key]?.[locale]
   if (keyOverride) {
     // Why: exact key overrides can still carry stale MT output, so glossary repairs remain the final gate.
-    let result = applyBrandMistranslationFixes(enValue, keyOverride, locale)
+    let result = applyBrandMistranslationFixes(enValue, keyOverride, locale, key)
     result = applyPhraseFixes(enValue, result, locale)
     if (['zh', 'ja', 'ko'].includes(locale)) {
       result = applyCjkLatinTermSpacing(result, locale)
@@ -493,7 +523,7 @@ export function repairTranslatedValue({ key, enValue, localeValue, locale }) {
 
   const valueOverride = LOCALE_VALUE_OVERRIDES[locale]?.[enValue]
   if (valueOverride) {
-    let result = applyBrandMistranslationFixes(enValue, valueOverride, locale)
+    let result = applyBrandMistranslationFixes(enValue, valueOverride, locale, key)
     result = applyPhraseFixes(enValue, result, locale)
     if (['zh', 'ja', 'ko'].includes(locale)) {
       result = applyCjkLatinTermSpacing(result, locale)
@@ -514,7 +544,7 @@ export function repairTranslatedValue({ key, enValue, localeValue, locale }) {
     }
   }
 
-  result = applyBrandMistranslationFixes(enValue, result, locale)
+  result = applyBrandMistranslationFixes(enValue, result, locale, key)
   result = applyPhraseFixes(enValue, result, locale)
   if (['zh', 'ja', 'ko'].includes(locale)) {
     result = applyCjkLatinTermSpacing(result, locale)

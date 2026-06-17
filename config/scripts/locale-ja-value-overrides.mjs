@@ -51,9 +51,9 @@ export const JA_VALUE_OVERRIDES = {
   'No Linear issues found': 'Linear イシューが見つかりません',
   'Unable to load Linear issues': 'Linear イシューを読み込めません',
   'No Jira issues found': 'Jira イシューが見つかりません',
-  issue: 'イシュー',
-  issues: 'イシュー',
-  Issues: 'イシュー',
+  issue: 'Issue',
+  issues: 'Issue',
+  Issues: 'Issue',
   'Common emulator commands': 'よく使うエミュレータコマンド',
   'Pull request': 'PR',
   'pull request': 'PR',
@@ -223,5 +223,12 @@ export const JA_VALUE_OVERRIDES = {
   'Open job in GitLab': 'GitLab でジョブを開く',
   'Showing first 100 jobs': '最初の 100 件のジョブを表示しています',
   'Imported from Ghostty.': 'Ghostty からインポートしました。',
-  'Claude Accounts': 'Claude アカウント'
+  'Claude Accounts': 'Claude アカウント',
+  // Terminal/theme cursor settings = the on-screen カーソル, not the Cursor product.
+  'Cursor Text': 'カーソル文字',
+  'Cursor color': 'カーソル色',
+  'Cursor Opacity': 'カーソルの不透明度',
+  'Cursor Shape': 'カーソル形状',
+  'Blinking Cursor': 'カーソルの点滅',
+  'Terminal Cursor': 'Terminal カーソル'
 }
