@@ -1,3 +1,4 @@
+import { isScreenCursorContext } from './locale-screen-cursor-exemptions.mjs'
 import { LOCALE_KEY_OVERRIDES } from './locale-key-overrides.mjs'
 import { LOCALE_PHRASE_FIXES } from './locale-phrase-fixes.mjs'
 import { SEARCH_KEYWORD_OVERRIDES } from './locale-search-keyword-overrides.mjs'
@@ -407,29 +408,6 @@ function includesPreservedLatinTerm(value, term) {
     return value.includes(term)
   }
   return new RegExp(`(^|[^A-Za-z_])${escapeRegExp(term)}($|[^A-Za-z_])`).test(value)
-}
-
-// Multi-word "Cursor …" labels always mean the screen cursor, never the Cursor product.
-const SCREEN_CURSOR_ENVALUES = new Set([
-  'Cursor Text',
-  'Cursor color',
-  'Cursor Opacity',
-  'Cursor Shape',
-  'Blinking Cursor',
-  'Terminal Cursor'
-])
-
-// Bare "Cursor" is ambiguous; these keys are the terminal/theme cursor settings (screen cursor).
-const SCREEN_CURSOR_KEYS = new Set([
-  'auto.components.settings.TerminalWindowSection.c9e1fdf42f',
-  'auto.components.onboarding.ThemeStep.ab2a583a97'
-])
-
-function isScreenCursorContext(brand, enValue, key) {
-  if (brand !== 'Cursor') {
-    return false
-  }
-  return SCREEN_CURSOR_ENVALUES.has(enValue) || SCREEN_CURSOR_KEYS.has(key)
 }
 
 function applyBrandMistranslationFixes(enValue, localeValue, locale, key = '') {
