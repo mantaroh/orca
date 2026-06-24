@@ -39,14 +39,38 @@ function getInput(): HTMLInputElement {
   return input
 }
 
+function setNativeValue(input: HTMLInputElement, text: string): void {
+  // Why: React reads controlled-input changes via the native value setter;
+  // assigning input.value directly is swallowed by React's value tracking.
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  setValue?.call(input, text)
+}
+
 function typeText(text: string): void {
   act(() => {
     const input = getInput()
-    // Why: React reads controlled-input changes via the native value setter;
-    // assigning input.value directly is swallowed by React's value tracking.
-    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
-    setValue?.call(input, text)
+    setNativeValue(input, text)
     input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+function compositionStart(): void {
+  act(() => {
+    getInput().dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
+  })
+}
+
+// Why: an input event fired between compositionstart and compositionend models a
+// keystroke of unconfirmed IME text (e.g. Japanese kana before conversion).
+function composingInput(text: string): void {
+  typeText(text)
+}
+
+function compositionEnd(text: string): void {
+  act(() => {
+    const input = getInput()
+    setNativeValue(input, text)
+    input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: text }))
   })
 }
 
@@ -108,5 +132,48 @@ describe('RepoSettingsDraftInput', () => {
 
     expect(onTextChange).toHaveBeenNthCalledWith(1, 'a')
     expect(onTextChange).toHaveBeenNthCalledWith(2, 'ab')
+  })
+
+  it('does not persist unconfirmed IME text while composing', () => {
+    const onTextChange = vi.fn()
+    render({ repoId: 'repo-1', storeValue: '', onTextChange })
+
+    // Japanese conversion: type kana, then convert, before confirming.
+    compositionStart()
+    composingInput('にほんご')
+    composingInput('日本語')
+
+    // Why: persisting mid-composition writes the pre-confirmation value and its
+    // async store echo can cancel the IME session.
+    expect(onTextChange).not.toHaveBeenCalled()
+    // The input still shows the unconfirmed text via the local draft.
+    expect(getInput().value).toBe('日本語')
+  })
+
+  it('persists once with the confirmed value on compositionend', () => {
+    const onTextChange = vi.fn()
+    render({ repoId: 'repo-1', storeValue: '', onTextChange })
+
+    compositionStart()
+    composingInput('にほんご')
+    composingInput('日本語')
+    compositionEnd('日本語')
+
+    expect(onTextChange).toHaveBeenCalledTimes(1)
+    expect(onTextChange).toHaveBeenCalledWith('日本語')
+    expect(getInput().value).toBe('日本語')
+  })
+
+  it('resumes per-keystroke persistence after composition ends', () => {
+    const onTextChange = vi.fn()
+    render({ repoId: 'repo-1', storeValue: '', onTextChange })
+
+    compositionStart()
+    composingInput('あ')
+    compositionEnd('亜')
+    typeText('亜b')
+
+    expect(onTextChange).toHaveBeenNthCalledWith(1, '亜')
+    expect(onTextChange).toHaveBeenNthCalledWith(2, '亜b')
   })
 })
