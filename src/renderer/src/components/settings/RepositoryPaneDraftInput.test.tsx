@@ -71,6 +71,9 @@ function compositionEnd(text: string): void {
     const input = getInput()
     setNativeValue(input, text)
     input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: text }))
+    // Why: some IMEs (e.g. Firefox) emit the final input event after
+    // compositionend; model it so the single-persist guard is exercised.
+    input.dispatchEvent(new Event('input', { bubbles: true }))
   })
 }
 

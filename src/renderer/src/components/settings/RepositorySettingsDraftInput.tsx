@@ -28,6 +28,10 @@ export function RepoSettingsDraftInput({
   // composition. Hold persistence until compositionend so only confirmed text
   // reaches updateRepo.
   const composingRef = useRef(false)
+  // Why: some IMEs emit a trailing change event after compositionend that
+  // repeats the already-persisted confirmed value; consume that one change so
+  // the value is not persisted twice.
+  const skipNextChangeRef = useRef<string | null>(null)
 
   const persist = (text: string): void => {
     pendingStoreEchoesRef.current.push(text)
@@ -66,12 +70,19 @@ export function RepoSettingsDraftInput({
         setDraft({ repoId, text: nextText })
         // Why: during composition the input stays live via draft, but the
         // unconfirmed text is not persisted until compositionend.
-        if (!composingRef.current) {
-          persist(nextText)
+        if (composingRef.current) {
+          return
         }
+        if (skipNextChangeRef.current === nextText) {
+          skipNextChangeRef.current = null
+          return
+        }
+        skipNextChangeRef.current = null
+        persist(nextText)
       }}
       onCompositionStart={(e) => {
         composingRef.current = true
+        skipNextChangeRef.current = null
         onCompositionStart?.(e)
       }}
       onCompositionEnd={(e) => {
@@ -79,6 +90,8 @@ export function RepoSettingsDraftInput({
         const nextText = e.currentTarget.value
         setDraft({ repoId, text: nextText })
         persist(nextText)
+        // Why: cover IMEs that fire the final change after compositionend.
+        skipNextChangeRef.current = nextText
         onCompositionEnd?.(e)
       }}
     />
