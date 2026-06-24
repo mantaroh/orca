@@ -42,10 +42,13 @@ export function RepoSettingsDraftInput({
     setDraft((current) => {
       if (current.repoId !== repoId) {
         pendingStoreEchoesRef.current = []
+        composingRef.current = false
+        skipNextChangeRef.current = null
         return { repoId, text: storeValue }
       }
       if (storeValue === current.text) {
         pendingStoreEchoesRef.current = []
+        skipNextChangeRef.current = null
         return current
       }
       const pendingEchoIndex = pendingStoreEchoesRef.current.indexOf(storeValue)
@@ -56,6 +59,7 @@ export function RepoSettingsDraftInput({
         return current
       }
       pendingStoreEchoesRef.current = []
+      skipNextChangeRef.current = null
       return { repoId, text: storeValue }
     })
   }, [repoId, storeValue])

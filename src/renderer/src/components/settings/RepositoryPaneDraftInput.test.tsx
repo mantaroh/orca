@@ -66,14 +66,16 @@ function composingInput(text: string): void {
   typeText(text)
 }
 
-function compositionEnd(text: string): void {
+function compositionEnd(text: string, options?: { trailingInput?: boolean }): void {
   act(() => {
     const input = getInput()
     setNativeValue(input, text)
     input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: text }))
     // Why: some IMEs (e.g. Firefox) emit the final input event after
     // compositionend; model it so the single-persist guard is exercised.
-    input.dispatchEvent(new Event('input', { bubbles: true }))
+    if (options?.trailingInput !== false) {
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    }
   })
 }
 
@@ -167,6 +169,21 @@ describe('RepoSettingsDraftInput', () => {
     expect(getInput().value).toBe('日本語')
   })
 
+  it('does not suppress later edits when no final input follows compositionend', () => {
+    const onTextChange = vi.fn()
+    render({ repoId: 'repo-1', storeValue: '', onTextChange })
+
+    compositionStart()
+    composingInput('にほんご')
+    compositionEnd('日本語', { trailingInput: false })
+    render({ repoId: 'repo-1', storeValue: '日本語', onTextChange })
+
+    typeText('日本語!')
+
+    expect(onTextChange).toHaveBeenNthCalledWith(1, '日本語')
+    expect(onTextChange).toHaveBeenNthCalledWith(2, '日本語!')
+  })
+
   it('resumes per-keystroke persistence after composition ends', () => {
     const onTextChange = vi.fn()
     render({ repoId: 'repo-1', storeValue: '', onTextChange })
@@ -178,5 +195,18 @@ describe('RepoSettingsDraftInput', () => {
 
     expect(onTextChange).toHaveBeenNthCalledWith(1, '亜')
     expect(onTextChange).toHaveBeenNthCalledWith(2, '亜b')
+  })
+
+  it('resets composition state when the pane switches repos', () => {
+    const onTextChange = vi.fn()
+    render({ repoId: 'repo-1', storeValue: '', onTextChange })
+
+    compositionStart()
+    composingInput('未確定')
+    render({ repoId: 'repo-2', storeValue: 'Repo Two', onTextChange })
+    typeText('Renamed Repo Two')
+
+    expect(onTextChange).toHaveBeenCalledTimes(1)
+    expect(onTextChange).toHaveBeenCalledWith('Renamed Repo Two')
   })
 })
