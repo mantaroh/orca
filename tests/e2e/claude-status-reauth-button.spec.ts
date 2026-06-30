@@ -35,6 +35,9 @@ test.describe('claude status bar re-authenticate button', () => {
       store.setState({
         settings: {
           ...current,
+          // Pin the UI language so the menu's accessible names are stable
+          // regardless of the host/CI locale (I18nProvider applies this).
+          uiLanguage: 'en',
           claudeManagedAccounts: [account],
           activeClaudeManagedAccountId: account.id,
           activeClaudeManagedAccountIdsByRuntime: { host: account.id, wsl: {} }
@@ -43,12 +46,12 @@ test.describe('claude status bar re-authenticate button', () => {
     })
 
     const trigger = orcaPage.getByRole('button', {
-      name: /Open Claude details and account switcher|Claude の詳細とアカウント切り替えを開く/
+      name: 'Open Claude details and account switcher'
     })
     await expect(trigger).toBeVisible()
     await trigger.click()
 
-    const reauthItem = orcaPage.getByRole('menuitem', { name: /Re-authenticate|再認証/ })
+    const reauthItem = orcaPage.getByRole('menuitem', { name: 'Re-authenticate' })
     await expect(reauthItem).toBeVisible()
   })
 })
